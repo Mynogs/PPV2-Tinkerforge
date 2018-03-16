@@ -1,2 +1,3 @@
 # PPV2-Tinkerforge
-P+ V2 Block Library: Tinkerforge
+This library is part of the P+ simulation software.
+It is for controlling Tinkerforge bricks and bricklets over USB and/or Ethernet.
