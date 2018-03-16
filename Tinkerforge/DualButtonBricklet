@@ -1,0 +1,96 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:58:28 AR V1.0b
+-- 21.06.2017 17:46:46 AR V1.0c
+-- 05.07.2017 18:04:19 AR V1.0d
+-- 30.09.2017 11:26:05 AR V1.0e
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'Dual Button Bricklet',
+  parameter = {
+    uid = 'aaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(2)
+    block.setInputPinName(1, 'L')
+    block.setInputPinName(2, 'R')
+    block.setInputPinDefault(1, false)
+    block.setInputPinDefault(2, false)
+    block.setInputPinTypeRestrains(1, 'boolean')
+    block.setInputPinTypeRestrains(2, 'boolean')
+    block.setOutputsPinCount(2)
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.setOutputPinTypeRestrains(2, 'boolean')
+    block.setOutputPinName(1, 'L')
+    block.setOutputPinName(2, 'R')
+    block.setOutputPinTypeRestrains(1, 'boolean')
+    block.setOutputPinTypeRestrains(2, 'boolean')
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('BreakAlgebraLoop', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 2))
+        end
+
+        block.stepFirst = function()
+          local l, r = block.bricklet:io(3, false, "b1b1")
+          return not l, not r
+        end
+
+        block.stepLast = function(l, r)
+          block.bricklet:io(1, "b1b1", not l, not r, false)
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+
+

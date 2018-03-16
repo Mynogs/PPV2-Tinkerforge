@@ -1,0 +1,83 @@
+-- 22.03.2017 06:51:21 AR V1.0a
+-- 01.04.2017 16:59:44 AR V1.0b
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'Industrial Quad Relay Bricklet',
+  parameter = {
+    uid = 'aaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(4)
+    block.setOutputsPinCount(0)
+    for i = 1, 4 do
+      block.setInputPinDefault(i, false)
+      block.setInputPinTypeRestrains(i, 'boolean')
+    end
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 0))
+        end
+
+        block.step = function(a, b, c, d)
+          local v = 0
+          v = v | (a and 1 or 0)
+          v = v | (b and 2 or 0)
+          v = v | (c and 4 or 0)
+          v = v | (d and 8 or 0)
+          block.bricklet:io(1, "u2", v, false)
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

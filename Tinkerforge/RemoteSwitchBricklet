@@ -1,0 +1,174 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:58:40 AR V1.0b
+-- 05.07.2017 19:13:31 AR V1.0c
+-- 12.07.2017 16:02:12 AR V1.0d
+-- 22.10.2017 18:52:28 AR V1.0e Repeat command all 10 minutes
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'Remote Switch Bricklet',
+  parameter = {
+    uid = 'aaa',
+    repeats = 5,
+    reSend = 600,
+    type = 1,
+    a = {house = 0, receiver = 0},
+    b = {address = 0, unit = 0},
+    c = {system = 0, device = 0}
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setInputPinDefault(1, false)
+    block.setInputPinTypeRestrains(1, 'boolean')
+    block.setOutputsPinCount(0)
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  setGUI = function(self)
+    local function seqN(n, c)
+      local s = ''
+      if c >= 65 then
+        for i = 1, n do
+          s = s .. string.char(c + i - 1) .. '\n'
+        end
+      else
+        for i = 1, n do
+          s = s .. (c + i  - 1) .. '\n'
+        end
+      end
+      return s
+    end
+    gui.remove('_?_*')
+    if self.parameter.type == 1 then
+      gui.add('RadioGroup', '_1_RadioGroupHouse', 'House Code', seqN(32, 0), {Left = 10, Top = 220, Width = 380, Height = 140, Columns = 8})
+      gui.set('_1_RadioGroupHouse', self.parameter.a.house)
+      gui.add('RadioGroup', '_1_RadioGroupReceiver', 'Receiver Code', seqN(32, 0), {Left = 400, Top = 220, Width = 380, Height = 140, Columns = 8})
+      gui.set('_1_RadioGroupReceiver', self.parameter.a.receiver)
+    elseif self.parameter.type == 2 then
+      gui.add('Edit', '_2_EditAddress', 'Address', {Top = 200, IntegerMode = true})
+      gui.set('_2_EditAddress', self.parameter.b.address)
+      gui.add('RadioGroup', '_2_RadioGroupUnit', 'Unit', seqN(16, 0), {Left = 400, Top = 220, Width = 380, Height = 140, Columns = 8})
+      gui.set('_2_RadioGroupUnit', self.parameter.a.receiver)
+    elseif self.parameter.type == 3 then
+      gui.add('RadioGroup', '_3_RadioGroupSystem', 'System Code', seqN(8, 65), {Left = 10, Top = 220, Width = 380, Height = 140, Columns = 8})
+      gui.set('_3_RadioGroupSystem', self.parameter.c.system)
+      gui.add('RadioGroup', '_3_RadioGroupDevice', 'Device Code', seqN(16, 0), {Left = 400, Top = 220, Width = 380, Height = 140, Columns = 8})
+      gui.set('_3_RadioGroupDevice', self.parameter.c.device)
+    end
+  end,
+
+  open = function(self)
+    gui.add('HTMLInfo', 'Info', 'Bricklet', self.name ..
+[[
+<br><br>For more information look here:
+<a href="https://www.tinkerforge.com/de/doc/Hardware/Bricklets/Remote_Switch.html#remote-switch-bricklet-addressing-types">Remote Switch Bricklet</a>
+]])
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', 'Select UID')
+    gui.add('Line', 'Line1')
+    gui.add('ComboBox', 'ComboBoxType', 'Type', 'A Switch\nB Switch\nC Switch', {Left = 200, Width = 120})
+    gui.add('Edit', 'EditRepeats', 'Repeat n time ofter changed [n]', {Left = 200})
+    gui.add('Edit', 'EditReSend', 'Re send n times interval (0 = off) [s]', {Left = 200})
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.set('EditRepeats', 'Integer', self.parameter.repeats)
+    gui.set('EditReSend', 'Integer', self.parameter.reSend)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.set('ComboBoxType', self.parameter.type - 1)
+    gui.setEventHandler(
+      self,
+      'ComboBoxType',
+      {
+        Click = function(self)
+          self.parameter.type = gui.get('ComboBoxType') + 1
+          self:setGUI()
+        end,
+      }
+    )
+    self.setGUI(self)
+    gui.setSize(770, 380)
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    self.parameter.repeats = gui.get('EditRepeats', 'Integer')
+    self.parameter.reSend = gui.get('EditReSend', 'Integer')
+
+    if self.parameter.type == 1 then
+      self.parameter.a.house = gui.get('_1_RadioGroupHouse')
+      self.parameter.a.receiver = gui.get('_1_RadioGroupReceiver')
+    elseif self.parameter.type == 2 then
+      self.parameter.b.address = gui.get('_2_EditAddress')
+      self.parameter.b.unit = gui.get('_2_RadioGroupUnit')
+    elseif self.parameter.type == 3 then
+      self.parameter.c.system = gui.get('_3_RadioGroupSystem')
+      self.parameter.c.device = gui.get('_3_RadioGroupDevice')
+    end
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 1))
+          block.timer = 0.0
+        end
+
+        block.step = function(a)
+
+          block.timer = block.timer + block.parent.ellapsedS
+          if a ~= block.a RESEND then
+            block.a = a
+            block.timer = 0.0
+            for i = 1, REPEATS do
+              SWITCH
+            end
+          end
+        end
+
+        return block
+      ]==]
+
+    local switch
+    if self.parameter.type == 1 then
+      switch = 'block.bricklet:io(6, "u1u1b1", '.. self.parameter.a.house .. ', ' .. self.parameter.a.receiver .. ', a, false)'
+    elseif self.parameter.type == 2 then
+      switch = 'block.bricklet:io(7, "u4u1b1", '.. self.parameter.b.address .. ', ' .. self.parameter.b.unit .. ', a, false)'
+    elseif self.parameter.type == 3 then
+      switch = 'block.bricklet:io(8, "u1u1b1", '.. (self.parameter.c.system + 65) .. ', ' .. self.parameter.c.device .. ', a, false)'
+    end
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['SWITCH'] = switch,
+      ['REPEATS'] = self.parameter.repeats,
+      ['RESEND'] = (self.parameter.reSend or 0) > 0 and 'or block.timer > ' .. self.parameter.reSend or ''
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

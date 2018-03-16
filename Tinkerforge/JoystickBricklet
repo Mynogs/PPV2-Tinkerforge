@@ -1,0 +1,80 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:54:28 AR V1.0b
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'Joystick Bricklet',
+  parameter = {
+    uid = 'aaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(3)
+    block.setOutputPinName(1, 'x')
+    block.setOutputPinName(2, 'y')
+    block.setOutputPinName(3, 'p')
+    block.setOutputPinTypeRestrains(3, 'boolean')
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 0))
+        end
+
+        block.step = function(a)
+          local x, y = block.bricklet:io(1, false, "d2d2");
+          local p = block.bricklet:io(2, false, "b");
+          return x / 100.0, y / 100.0, p
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

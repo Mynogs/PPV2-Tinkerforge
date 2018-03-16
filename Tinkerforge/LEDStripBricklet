@@ -1,0 +1,179 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:54:28 AR V1.0b
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'LED Strip Bricklet',
+  parameter = {
+    uid = 'aaa',
+    chip = 2,
+    mapping = 1
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setInputPinTypeRestrains(1, 'table')
+    block.setOutputsPinCount(0)
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.add('RadioGroup', 'RadioGroupChip', 'Chip',
+[[
+WS2801
+WS2811 / SK6812 / NeoPixel RGB
+WS2812 / SK6812 / NeoPixel RGB / NeoPixel RGBW
+LPD8806
+APA102
+]],
+    {Width = 500, Height = 120})
+    gui.add('RadioGroup', 'RadioGroupMapping', 'Mapping',[[
+RGB
+RBG
+BRG
+BGR
+GRB
+GBR
+RGBW
+RGWB
+RBGW
+RBWG
+RWGB
+RWBG
+GRWB
+GRBW
+GBWR
+GBRW
+GWBR
+GWRB
+BRGW
+BRWG
+BGRW
+BGWR
+BWRG
+BWGR
+WRBG
+WRGB
+WGBR
+WGRB
+WBGR
+WBRG
+]],
+    {Width = 500, Height = 140, Columns = 5})
+
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.set('RadioGroupChip', 'ItemIndex', self.parameter.chip)
+    gui.set('RadioGroupMapping', 'ItemIndex', self.parameter.mapping)
+
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    self.parameter.chip = gui.get('RadioGroupChip', 'ItemIndex')
+    self.parameter.mapping = gui.get('RadioGroupMapping', 'ItemIndex')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 0))
+          --block.bricklet:io(9, "u2", CHIP, false);
+          --block.bricklet:io(13, "u1", MAPPING, false);
+        end
+
+        block.step = function(a)
+STEP
+        end
+
+        return block
+      ]==]
+    local chip = {2801, 2811, 2812, 8806, 102}
+    local mapping = {
+      6, 9, 33, 36, 18, 24, 27, 30, 39, 45,
+      54, 57, 78, 75, 108, 99, 120, 114, 135, 141,
+      147, 156, 177, 180, 201, 198, 216, 210, 228, 225
+    }
+    local step
+    if mapping[self.parameter.mapping + 1] < 24 then
+      step =
+[==[
+          local r, g, b = '', '', ''
+          local index = -16
+          for i = 1, #a do
+            local rgb = a[i];
+            r = r .. string.char(math.floor(sys.norm(rgb[1]) * 255.0))
+            g = g .. string.char(math.floor(sys.norm(rgb[2]) * 255.0))
+            b = b .. string.char(math.floor(sys.norm(rgb[3]) * 255.0))
+            if #r == 16 then
+              index = i - 16
+              block.bricklet:io(1, "u2u1s16s16s16", index, 16, r, g, b, false)
+              r, g, b = '', '', ''
+            end
+          end
+          if #r > 0 then
+            block.bricklet:io(1, "u2u1s16s16s16", index + 16, #r, r, g, b, false)
+          end
+]==]
+    else
+      step =
+[==[
+          local r, g, b, w = '', '', '', ''
+          local index = -12
+          for i = 1, #a do
+            local rgbw = a[i];
+            r = r .. string.char(math.floor(sys.norm(rgbw[1]) * 255.0))
+            g = g .. string.char(math.floor(sys.norm(rgbw[2]) * 255.0))
+            b = b .. string.char(math.floor(sys.norm(rgbw[3]) * 255.0))
+            w = w .. string.char(math.floor(sys.norm(rgbw[4]) * 255.0))
+            if #r == 12 then
+              index = i - 12
+              block.bricklet:io(11, "u2u1s12s12s12s12", index, 12, r, g, b, w, false);
+              r, g, b, w = '', '', '', ''
+            end
+          end
+          if #r > 0 then
+            block.bricklet:io(11, "u2u1s12s12s12s12", index + 12, #r, r, g, b, w, false)
+          end
+]==]
+    end
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['STEP'] = step,
+      ['CHIP'] = chip[self.parameter.chip + 1],
+      ['MAPPING'] = mapping[self.parameter.mapping + 1]
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

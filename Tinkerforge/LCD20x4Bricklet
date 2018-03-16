@@ -1,0 +1,103 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:59:53 AR V1.0b
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'LCD 20x4 Bricklet',
+  parameter = {
+    uid = 'aaa',
+    inputs = 1,
+    content = [[
+{row = 1, col = 5, text = 'Hello P+'},
+{row = 2, col = 1, format = '%10.2g'},
+]]
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setOutputsPinCount(0)
+    block.modifyFlags('CanStopSimulation', false)
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.add('Edit', 'EditNumberOfInputs', 'Number of inputs')
+    gui.add('Memo', 'Memo', {Height = 200, Width = 338})
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.set('EditNumberOfInputs', 'Integer', self.parameter.inputs)
+    gui.set('Memo', 'Text', self.parameter.content)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    block.setInputsPinCount(self.parameter.inputs)
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    self.parameter.inputs = math.max(gui.get('EditNumberOfInputs', 'Integer'), 1)
+    self.parameter.content = gui.get('Memo', 'Text')
+    block.setInputsPinCount(self.parameter.inputs)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 6))
+          block.bricklet:io(2, "", false)
+          block.bricklet:io(3, "", false)
+        end
+
+        block.step = function(...)
+          local a = {...}
+          local c = {CONTENT}
+          local j = 1
+          for i = 1, #c do
+            if (c[i].format) then
+              local s = sys.format(c[i].format, a[j])
+              --print(s)
+              block.bricklet:io(1, "u1u1s20", c[i].row - 1, c[i].col - 1, s, false)
+              j = j + 1
+            elseif (c[i].text) then
+              block.bricklet:io(1, "u1u1s20", c[i].row - 1, c[i].col - 1, c[i].text, false)
+            end
+          end
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['CONTENT'] = self.parameter.content
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

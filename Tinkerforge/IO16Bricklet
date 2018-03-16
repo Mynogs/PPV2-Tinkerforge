@@ -1,0 +1,185 @@
+-- 18.11.2017 17:13:58 AR V1.0a
+-- 19.11.2017 07:29:13 AR V1.0b
+
+block.setSize(151, 201)
+
+generic = {
+  name = 'IO-16 Bricklet',
+  parameter = {
+    uid = 'aaa',
+    mode = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+  },
+
+  refreshPins = function(self)
+    local iX, oX = {}, {}  -- Board view
+    for i = 1, 16 do
+      if self.parameter.mode[i] & 2 == 0 then
+        iX[#iX + 1] = i
+      else
+        oX[#oX + 1] = i
+      end
+    end
+    local function name(i)
+      if i <= 7 then
+        return 'A' .. i
+      end
+      return 'B' .. (i - 8)
+    end
+    block.setInputsPinCount(#oX)
+    for i = 1, #oX do
+      block.setInputPinTypeRestrains(i, 'boolean')
+      block.setInputPinName(i, name(oX[i] - 1))
+      block.setInputPinDefault(i, self.parameter.mode[oX[i]] & 1 ~= 0)
+    end
+    block.setOutputsPinCount(#iX)
+    for i = 1, #iX do
+      block.setOutputPinTypeRestrains(i, 'boolean')
+      block.setOutputPinName(i, name(iX[i] - 1))
+    end
+  end,
+
+  init = function(self)
+    generic.refreshPins(self)
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('BreakAlgebraLoop', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.setSize(200)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.add('Line', 'Line1')
+    for i = 1, 8 do
+      gui.add('ComboBox', 'ComboBox' .. i, 'Pin A' .. (i - 1), 'Input\nInput with pullup\nOutput low\nOutput high')
+    end
+    gui.add('Line', 'Line1')
+    for i = 9, 16 do
+      gui.add('ComboBox', 'ComboBox' .. i, 'Pin B' .. (i - 9), 'Input\nInput with pullup\nOutput low\nOutput high')
+    end
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    for i = 1, 16 do
+      gui.set('ComboBox' .. i, 'ItemIndex', self.parameter.mode[i])
+    end
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    for i = 1, 16 do
+      self.parameter.mode[i] = gui.get('ComboBox' .. i, 'ItemIndex')
+    end
+    generic.refreshPins(self)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 2))
+          block.bricklet:io(3, "c1u1c1b1", 'a', 1, CONFIGA1, false)
+          block.bricklet:io(3, "c1u1c1b1", 'a', 2, CONFIGA2, false)
+          block.bricklet:io(3, "c1u1c1b1", 'a', 4, CONFIGA3, false)
+          block.bricklet:io(3, "c1u1c1b1", 'a', 8, CONFIGA4, false)
+          block.bricklet:io(3, "c1u1c1b1", 'a', 16, CONFIGA5, false)
+          block.bricklet:io(3, "c1u1c1b1", 'a', 32, CONFIGA6, false)
+          block.bricklet:io(3, "c1u1c1b1", 'a', 64, CONFIGA7, false)
+          block.bricklet:io(3, "c1u1c1b1", 'a', 128, CONFIGA8, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 1, CONFIGB1, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 2, CONFIGB2, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 4, CONFIGB3, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 8, CONFIGB4, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 16, CONFIGB5, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 32, CONFIGB6, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 64, CONFIGB7, false)
+          block.bricklet:io(3, "c1u1c1b1", 'b', 128, CONFIGB8, false)
+        end
+
+        block.stepFirst = function()
+          local iA = block.bricklet:io(2, "c1", 'a', "u1")
+          local iB = block.bricklet:io(2, "c1", 'b', "u1")
+          return IX
+        end
+
+        block.stepLast = function(...)
+          local a = {...}
+          local oA, oB = OXA, OXB
+          block.bricklet:io(1, "c1u1", 'a', oA, false)
+          block.bricklet:io(1, "c1u1", 'b', oB, false)
+        end
+
+        return block
+      ]==]
+    local iX, oXA, oXB = {}, {}, {}, {}  -- Board view
+    for i = 1, 8 do
+      if self.parameter.mode[i] & 2 == 0 then
+        iX[#iX + 1] = 'iA & ' .. (1 << (i - 1)) .. ' ~= 0'
+      else
+        oXA[#oXA + 1] = '(a[' .. (#oXA + 1) .. '] and ' .. (1 << (i - 1)) .. ' or 0)'
+      end
+    end
+    for i = 9, 16 do
+      if self.parameter.mode[i] & 2 == 0 then
+        iX[#iX + 1] = 'iB & ' .. (1 << (i - 9)) .. ' ~= 0'
+      else
+        oXB[#oXB + 1] = '(a[' .. (#oXA + #oXB + 1) .. '] and ' .. (1 << (i - 9)) .. ' or 0)'
+      end
+    end
+    local config = {
+      [['i', false]],
+      [['i', true]],
+      [['o', false]],
+      [['o', true]]
+    }
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['CONFIGA1'] = config[self.parameter.mode[1] + 1],
+      ['CONFIGA2'] = config[self.parameter.mode[2] + 1],
+      ['CONFIGA3'] = config[self.parameter.mode[3] + 1],
+      ['CONFIGA4'] = config[self.parameter.mode[4] + 1],
+      ['CONFIGA5'] = config[self.parameter.mode[5] + 1],
+      ['CONFIGA6'] = config[self.parameter.mode[6] + 1],
+      ['CONFIGA7'] = config[self.parameter.mode[7] + 1],
+      ['CONFIGA8'] = config[self.parameter.mode[8] + 1],
+      ['CONFIGB1'] = config[self.parameter.mode[9] + 1],
+      ['CONFIGB2'] = config[self.parameter.mode[10] + 1],
+      ['CONFIGB3'] = config[self.parameter.mode[11] + 1],
+      ['CONFIGB4'] = config[self.parameter.mode[12] + 1],
+      ['CONFIGB5'] = config[self.parameter.mode[13] + 1],
+      ['CONFIGB6'] = config[self.parameter.mode[14] + 1],
+      ['CONFIGB7'] = config[self.parameter.mode[15] + 1],
+      ['CONFIGB8'] = config[self.parameter.mode[16] + 1],
+      ['IX'] = table.concat(iX, ', '),
+      ['OXA'] = (#oXA > 0) and table.concat(oXA, ' | ') or '0',
+      ['OXB'] = (#oXB > 0) and table.concat(oXB, ' | ') or '0',
+    }
+    return string.gsub(source, '%a+%d*', replaces)
+  end,
+
+}
+
+

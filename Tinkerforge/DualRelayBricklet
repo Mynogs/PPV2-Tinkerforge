@@ -1,0 +1,92 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:58:40 AR V1.0b
+-- 24.09.2017 16:25:28 AR V1.0c CheckBoxOffOnSimEnd
+-- 20.12.2017 15:00:56 AR V1.0d Missing stop function if offOnSimEnd == false
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'Dual Relay Bricklet',
+  parameter = {
+    uid = 'aaa',
+    offOnSimEnd = false,
+  },
+
+  init = function(self)
+    block.setInputsPinCount(2)
+    block.setInputPinDefault(1, false)
+    block.setInputPinDefault(2, false)
+    block.setInputPinTypeRestrains(1, 'boolean')
+    block.setInputPinTypeRestrains(2, 'boolean')
+    block.setOutputsPinCount(0)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.add('CheckBox', 'CheckBoxOffOnSimEnd', 'Switch off on simulation end', {Width = 150})
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.set('CheckBoxOffOnSimEnd', 'Checked', self.parameter.offOnSimEnd)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    self.parameter.offOnSimEnd = gui.get('CheckBoxOffOnSimEnd', 'Checked')
+    block.modifyFlags('SupressStopFunctionCall', not self.parameter.offOnSimEnd)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 2))
+        end
+
+        block.step = function(a, b)
+          block.bricklet:io(1, "b1b1", a, b, false)
+        end
+
+STOP
+        return block
+      ]==]
+    local stop =
+      [==[
+        block.stop = function()
+          block.bricklet:io(1, "b1b1", false, false, false)
+        end
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['STOP'] = self.parameter.offOnSimEnd and stop or 'block.stop = function() end'
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

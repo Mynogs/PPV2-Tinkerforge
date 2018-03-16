@@ -1,0 +1,84 @@
+-- 19.11.2017 09:48:28 AR V1.0a
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'GPS Bricklet 2.0',
+  parameter = {
+    uid = 'aaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(6)
+    block.setOutputPinName(1, 'Latitude')
+    block.setOutputPinName(2, 'Longitude')
+    block.setOutputPinName(3, 'Altitude')
+    block.setOutputPinName(4, 'Seoidal separation')
+    block.setOutputPinName(5, 'Fix')
+    block.setOutputPinName(6, 'Satellites')
+
+    block.setOutputPinTypeRestrains(5, 'boolean')
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 1))
+        end
+
+        block.step = function()
+          local latitude, ns, longitude, ew = block.bricklet:io(1, false, "u4s1u4s1")
+          local altitude, geoidalSeparation = block.bricklet:io(3, false, "d4d4")
+          local fix, satellites = block.bricklet:io(2, false, "b1u1")
+          return latitude / 1.0E6 * (ns == 'N' and 1.0 or -1.0), longitude / 1.0E6 * (ew == 'E' and 1.0 or -1.0), altitude / 100.0, geoidalSeparation / 100.0, fix, satellites
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

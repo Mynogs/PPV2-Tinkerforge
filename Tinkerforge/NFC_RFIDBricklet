@@ -1,0 +1,117 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 17:00:16 AR V1.0b
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'NFC/RFID Bricklet',
+  parameter = {
+    uid = 'aaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(1)
+    block.setOutputPinTypeRestrains(1, 'table')
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.worker = function()
+          local state
+          while true do
+            if state == 128 then
+
+              -- idle
+              block.bricklet:io(1, "u1", 3, false)
+              state = coroutine.yield()
+
+            elseif state == 194 then
+
+              -- request tag id error
+              block.bricklet:io(1, "u1", 3, false)
+              state = coroutine.yield()
+
+            elseif state == 130 then
+
+              -- request tag id ready
+              local type, length, id = block.bricklet:io(2, "", "u1u1s7")
+              local result = {}
+              for i = 1, length do
+                result[i] = id:byte(i)
+              end
+              block.bricklet:io(1, "u1", 3, false)
+              state = coroutine.yield(result)
+
+            else
+
+              state = coroutine.yield()
+
+            end
+
+          end
+        end
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 2))
+          block.co = coroutine.create(block.worker)
+        end
+
+        block.step = function()
+          local state, idle = block.bricklet:io(3, "", "u1b1")
+          if idle and state > 0 then
+            local _, q = coroutine.resume(block.co, state)
+            block.q = q
+            print(block.q)
+          end
+          return block.q or {}
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

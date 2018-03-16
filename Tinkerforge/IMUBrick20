@@ -1,0 +1,106 @@
+-- 22.03.2017 06:20:10 AR V1.0a
+-- 01.04.2017 16:59:03 AR V1.0b
+
+block.setSize(151, 101)
+
+generic = {
+  name = 'IMU Brick 2.0',
+  parameter = {
+    uid = 'aaaaaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(9)
+    block.setOutputPinName(1, 'acceleration')
+    block.setOutputPinName(2, 'magnetic')
+    block.setOutputPinName(3, 'angular')
+    block.setOutputPinName(4, 'euler')
+    block.setOutputPinName(5, 'quaternion')
+    block.setOutputPinName(6, 'linearacceleration')
+    block.setOutputPinName(7, 'gravity')
+    block.setOutputPinName(8, 'temperature')
+    block.setOutputPinName(9, 'calibration')
+    for i = 1, 7 do
+      block.setOutputPinTypeRestrains(i, 'table')
+    end
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name, 'brick')
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.brick = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 1))
+        end
+
+        block.step = function()
+          local
+            acceleration1, acceleration2, acceleration3,
+            magnetic1, magnetic2, magnetic3,
+            angular1, angular2, angular3,
+            euler1, euler2, euler3,
+            quaternion1, quaternion2, quaternion3, quaternion4,
+            linearacceleration1, linearacceleration2, linearacceleration3,
+            gravity1, gravity2, gravity3,
+            temperature,
+            calibration =
+              block.brick:io(9, false, string.rep('d2', 22) .. 'd1u1')
+          return
+            table.pack(acceleration1 / 100.0, acceleration2 / 100.0, acceleration3 / 100.0),
+            table.pack(magnetic1 / 16.0, magnetic2 / 16.0, magnetic3 / 16.0),
+            table.pack(angular1 / 16.0, angular2 / 16.0, angular3 / 16.0),
+            table.pack(euler1 / 16.0, euler2 / 16.0, euler3 / 16.0),
+            table.pack(quaternion1 / 16383.0, quaternion2 / 16383.0, quaternion3 / 16383.0, quaternion4 / 16383.0),
+            table.pack(linearacceleration1 / 100.0, linearacceleration2 / 100.0, linearacceleration3 / 100.0),
+            table.pack(gravity1 / 100.0, gravity2 / 100.0, gravity3 / 100.0),
+            temperature,
+            calibration
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

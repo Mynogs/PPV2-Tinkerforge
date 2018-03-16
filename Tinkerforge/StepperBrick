@@ -1,0 +1,119 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:57:54 AR V1.0b
+
+block.setSize(151, 101)
+
+generic = {
+  name = 'Stepper Brick',
+  parameter = {
+    uid = 'aaaaaa',
+    maxVelocity = 1000,
+    maxAcceleration = 100,
+    maxDeacceleration = 100,
+  },
+
+  init = function(self)
+    block.setInputsPinCount(4)
+    block.setOutputsPinCount(1)
+    block.setInputPinName(1, 'forward')
+    block.setInputPinTypeRestrains(1, 'boolean')
+    block.setInputPinDefault(1, false)
+    block.setInputPinName(2, 'backward')
+    block.setInputPinTypeRestrains(2, 'boolean')
+    block.setInputPinDefault(2, false)
+    block.setInputPinName(3, 'position')
+    block.setInputPinTypeRestrains(3, 'nil', 'number')
+    block.setInputPinDefault(3, 'nil')
+    block.setInputPinName(4, 'full stop')
+    block.setInputPinTypeRestrains(4, 'boolean')
+    block.setInputPinDefault(4, 'false')
+    block.setOutputPinName(1, 'position')
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.add('Edit', 'EditMaxVelocity', 'Max velocity [0..65536 steps/s]', {Left = 200})
+    gui.add('Edit', 'EditMaxAcceleration', 'Max acceleration [0..65536 steps/s²]', {Left = 200})
+    gui.add('Edit', 'EditMaxDeacceleration', 'Max deacceleration [0..65536 steps/s²]', {Left = 200})
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.set('EditMaxVelocity', 'Number', self.parameter.maxVelocity)
+    gui.set('EditMaxAcceleration', 'Number', self.parameter.maxAcceleration)
+    gui.set('EditMaxDeacceleration', 'Number', self.parameter.maxDeacceleration)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name, 'brick')
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    self.parameter.maxVelocity = gui.get('EditMaxVelocity', 'Number')
+    self.parameter.maxAcceleration = gui.get('EditMaxAcceleration', 'Number')
+    self.parameter.maxDeacceleration = gui.get('EditMaxDeacceleration', 'Number')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 1))
+          block.bricklet:io(1, "u2", MAXVELOCITY, false)
+          block.bricklet:io(4, "u2u2", MAXACCELERATION, MAXDEACCELERATION, false)
+        end
+
+        block.step = function(forward, backward, position, fullStop)
+          if fullStop then
+            block.bricklet:io(6, "", false)
+          end
+          if position then
+            block.bricklet:io(9, "d4", position, false)
+          elseif forward then
+            block.bricklet:io(16, "", false)
+          elseif backward then
+            block.bricklet:io(17, "", false)
+          else
+            block.bricklet:io(18, "", false)
+          end
+          return block.bricklet:io(8, false, "d4")
+        end
+
+        block.stop = function()
+          block.bricklet:io(18, "", false)
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['MAXVELOCITY'] = self.parameter.maxVelocity,
+      ['MAXACCELERATION'] = self.parameter.maxAcceleration,
+      ['MAXDEACCELERATION'] = self.parameter.maxDeacceleration,
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

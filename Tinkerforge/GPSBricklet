@@ -1,0 +1,86 @@
+-- 28.02.2017 11:13:40 AR V1.0a
+-- 01.04.2017 16:58:53 AR V1.0b
+-- 25.06.2017 19:25:43 AR V1.0c
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'GPS Bricklet',
+  parameter = {
+    uid = 'aaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(8)
+    block.setOutputPinName(1, 'Latitude')
+    block.setOutputPinName(2, 'NS')
+    block.setOutputPinName(3, 'Longitude')
+    block.setOutputPinName(4, 'EW')
+    block.setOutputPinName(5, 'PDOP')
+    block.setOutputPinName(6, 'HDOP')
+    block.setOutputPinName(7, 'VDOP')
+    block.setOutputPinName(8, 'EPE')
+    block.setOutputPinTypeRestrains(2, 'boolean')
+    block.setOutputPinTypeRestrains(4, 'boolean')
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 1))
+        end
+
+        block.step = function()
+          local latitude, ns, longitude, ew, pdop, hdop, vdop, epe = block.bricklet:io(1, false, "u4s1u4s1u2u2u2u2")
+          return latitude, ns == 'N', longitude, ew == 'E', pdop, hdop, vdop, epe
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+

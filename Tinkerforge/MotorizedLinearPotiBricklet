@@ -1,0 +1,93 @@
+-- 30.11.2017 16:21:54 AR V1.0a
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'Motorized Linear Poti Bricklet',
+  parameter = {
+    uid = 'aaa',
+    fast = true,
+    hold = false,
+  },
+
+  init = function(self)
+    block.setInputsPinCount(1)
+    block.setInputPinDefault(1, 'nil')
+    block.setInputPinTypeRestrains(1, 'nil', 'number')
+    block.setOutputsPinCount(1)
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('BreakAlgebraLoop', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.add('CheckBox', 'CheckBoxFast', 'Fast drive')
+    gui.add('CheckBox', 'CheckBoxHold', 'Hold positiom')
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.set('CheckBoxFast', 'Checked', self.parameter.fast)
+    gui.set('CheckBoxHold', 'Checked', self.parameter.hold)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    self.parameter.fast = gui.get('CheckBoxFast', 'Checked')
+    self.parameter.hold = gui.get('CheckBoxHold', 'Checked')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 2))
+        end
+
+        block.stepFirst = function()
+          return block.bricklet:io(1, false, "u2") / 100.0
+        end
+
+        block.stepLast = function(a)
+          if a then
+            block.bricklet:io(5, "u2u1b1", sys.norm(a) * 100.0, FAST, HOLD, false)
+          end
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['FAST'] = self.parameter.fast and 1 or 0,
+      ['HOLD'] = self.parameter.hold and 'true' or 'false'
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+
+
