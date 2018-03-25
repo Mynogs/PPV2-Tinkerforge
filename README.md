@@ -2,7 +2,8 @@
 This library is part of the P+ simulation software.
 It is for controlling Tinkerforge bricks and bricklets over USB and/or Ethernet.
 
-To install this P+ library, download the repository as zip file.
+
+To install the TinkerForge P+ library, download the repository as zip file.
 
 Unpack the zip file.
 
