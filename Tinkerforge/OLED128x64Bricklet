@@ -16,7 +16,7 @@ generic = {
   },
 
   init = function(self)
-    block.setInputsPinCount(1)
+    block.setInputsPinCount(self.parameter.inputs)
     block.setOutputsPinCount(0)
     block.modifyFlags('CanStopSimulation', false)
     block.modifyFlags('SupressStopFunctionCall', true)
@@ -51,7 +51,7 @@ generic = {
 
   apply = function(self)
     self.parameter.uid = gui.get('EditUID', 'Text')
-    self.parameter.inputs = math.min(gui.get('EditNumberOfInputs', 'Integer'), 1)
+    self.parameter.inputs = math.max(gui.get('EditNumberOfInputs', 'Integer'), 1)
     self.parameter.content = gui.get('Memo', 'Text')
     block.setInputsPinCount(self.parameter.inputs)
   end,
