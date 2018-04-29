@@ -1,5 +1,6 @@
 -- 28.02.2017 11:13:40 AR V1.0a
 -- 01.04.2017 16:59:53 AR V1.0b
+-- 29.04.2018 09:43:47 AR V1.0c Input count bug fixed
 
 block.setSize(151, 51)
 
@@ -50,7 +51,7 @@ generic = {
 
   apply = function(self)
     self.parameter.uid = gui.get('EditUID', 'Text')
-    self.parameter.inputs = math.max(gui.get('EditNumberOfInputs', 'Integer'), 1)
+    self.parameter.inputs = math.min(gui.get('EditNumberOfInputs', 'Integer'), 1)
     self.parameter.content = gui.get('Memo', 'Text')
     block.setInputsPinCount(self.parameter.inputs)
   end,
