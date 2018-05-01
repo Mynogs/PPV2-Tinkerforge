@@ -79,7 +79,7 @@ generic = {
           local j = 1
           for i = 1, #c do
             if (c[i].format) then
-              local s = sys.format(c[i].format, a[j])
+              local s = string.format(c[i].format, a[j])
               --print(s)
               block.bricklet:io(1, "u1u1s20", c[i].row - 1, c[i].col - 1, s, false)
               j = j + 1
