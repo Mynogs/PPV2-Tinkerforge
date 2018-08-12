@@ -9,5 +9,5 @@ Copy the `p+.key` licence file to P+ root directory (where the `p+.exe` is)
 
 # p+ Homepage
 
-You can also download a complete zip image supporting Tinkerforge here: [p+ simulation](https://www.pplus-simulation.de/produkte)
+You can also download a complete zip image supporting Tinkerforge from the p+ homepage: [p+ simulation](https://www.pplus-simulation.de/produkte)
 
