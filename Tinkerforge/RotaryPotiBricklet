@@ -2,6 +2,7 @@
 -- 01.04.2017 16:58:53 AR V1.0b
 -- 25.06.2017 19:25:43 AR V1.0c
 -- 23.01.2018 06:36:34 AR V1.0d Left and right value
+-- 12.09.2018 18:10:10 AR V1.0e Fix error in scaling
 
 block.setSize(151, 51)
 
@@ -68,19 +69,19 @@ generic = {
         end
 
         block.step = function()
-          return (block.bricklet:io(1, false, "d2") SHIFT) SCALE
+          return (((block.bricklet:io(1, false, "d2") + 150) / 300.0) SCALE) SHIFT
         end
 
         return block
       ]==]
     local range = self.parameter.right - self.parameter.left
-    local shift = range * self.parameter.left * 75.0 + 150.0
-    local scale = 1.0 / (300.0 / range)
+    local scale = range
+    local shift = self.parameter.left
     local replaces = {
       ['NAME'] = self.name,
       ['UID'] = self.parameter.uid,
+      ['SCALE'] = scale ~= 1.0 and '* ' .. scale or '',
       ['SHIFT'] = shift ~= 0.0 and '+ ' .. shift or '',
-      ['SCALE'] = scale ~= 1.0 and '* ' .. scale or ''
     }
     return string.gsub(source, '%a+', replaces)
   end,
