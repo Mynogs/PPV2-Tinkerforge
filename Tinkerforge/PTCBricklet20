@@ -59,7 +59,7 @@ generic = {
         end
 
         block.step = function()
-          local q, r = block.bricklet:io(1, false, "d4"), block.bricklet:io(19, false, "b1")
+          local q, r = block.bricklet:io(1, false, "d4"), block.bricklet:io(11, false, "b1")
           return q / 100.0, r
         end
 
