@@ -1,0 +1,81 @@
+-- 12.09.2018 16:29:38 AR V1.0a
+
+block.setSize(151, 151)
+
+generic = {
+  name = 'Real-Time Clock Bricklet',
+  parameter = {
+    uid = 'aaa'
+  },
+
+  init = function(self)
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(7)
+    block.setOutputPinName(1, 'year')
+    block.setOutputPinName(2, 'month')
+    block.setOutputPinName(3, 'day')
+    block.setOutputPinName(4, 'hour')
+    block.setOutputPinName(5, 'minute')
+    block.setOutputPinName(6, 'second')
+    block.setOutputPinName(7, 'weekday')
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 1))
+        end
+
+        block.step = function()
+          local year, month, day, hour, minute, second, centisecond, weekday = block.bricklet:io(2, false, "u2u1u1u1u1u1u1u1")
+          return year, month, day, hour, minute, second + centisecond / 100.0, weekday
+        end
+
+        return block
+      ]==]
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+
