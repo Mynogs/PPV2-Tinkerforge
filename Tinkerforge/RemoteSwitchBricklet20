@@ -150,9 +150,9 @@ generic = {
 
     local switch
     if self.parameter.type == 1 then
-      switch = 'block.bricklet:io(6, "u1u1b1", '.. self.parameter.a.house .. ', ' .. self.parameter.a.receiver .. ', a, false)'
+      switch = 'block.bricklet:io(5, "u1u1b1", '.. self.parameter.a.house .. ', ' .. self.parameter.a.receiver .. ', a, false)'
     elseif self.parameter.type == 2 then
-      switch = 'block.bricklet:io(7, "u4u1b1", '.. self.parameter.b.address .. ', ' .. self.parameter.b.unit .. ', a, false)'
+      switch = 'block.bricklet:io(6, "u4u1b1", '.. self.parameter.b.address .. ', ' .. self.parameter.b.unit .. ', a, false)'
     elseif self.parameter.type == 3 then
       switch = 'block.bricklet:io(8, "u1u1b1", '.. (self.parameter.c.system + 65) .. ', ' .. self.parameter.c.device .. ', a, false)'
     end
