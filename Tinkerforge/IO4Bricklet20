@@ -1,0 +1,142 @@
+-- 12.09.2018 17:38:57 AR V1.0a
+
+block.setSize(151, 51)
+
+generic = {
+  name = 'IO-4 Bricklet',
+  parameter = {
+    uid = 'aaa',
+    mode = {0, 0, 0, 0}
+  },
+
+  refreshPins = function(self)
+    local iX, oX = {}, {}  -- Board view
+    for i = 1, 4 do
+      if self.parameter.mode[i] & 2 == 0 then
+        iX[#iX + 1] = i
+      else
+        oX[#oX + 1] = i
+      end
+    end
+    block.setInputsPinCount(#oX)
+    for i = 1, #oX do
+      block.setInputPinTypeRestrains(i, 'boolean')
+      block.setInputPinName(i, oX[i] - 1)
+      block.setInputPinDefault(i, self.parameter.mode[oX[i]] & 1 ~= 0)
+    end
+    block.setOutputsPinCount(#iX)
+    for i = 1, #iX do
+      block.setOutputPinTypeRestrains(i, 'boolean')
+      block.setOutputPinName(i, iX[i] - 1)
+    end
+  end,
+
+  init = function(self)
+    generic.refreshPins(self)
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('BreakAlgebraLoop', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.setSize(200)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Line', 'Line1')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    for i = 1, 4 do
+      gui.add('ComboBox', 'ComboBox' .. i, 'Pin ' .. (i - 1), 'Input\nInput with pullup\nOutput low\nOutput high')
+    end
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    for i = 1, 4 do
+      gui.set('ComboBox' .. i, 'ItemIndex', self.parameter.mode[i])
+    end
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    for i = 1, 4 do
+      self.parameter.mode[i] = gui.get('ComboBox' .. i, 'ItemIndex')
+    end
+    generic.refreshPins(self)
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(0x00, "'" .. self.parameter.uid .. "'", "", "0.0, 0.66, 0.91")
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 2))
+          block.bricklet:io(3, "u1c1b1", 1, CONFIG1, false)
+          block.bricklet:io(3, "u1c1b1", 2, CONFIG2, false)
+          block.bricklet:io(3, "u1c1b1", 4, CONFIG3, false)
+          block.bricklet:io(3, "u1c1b1", 8, CONFIG4, false)
+        end
+
+        block.stepFirst = function()
+          local i = block.bricklet:io(2, false, "u1")
+          return IX
+        end
+
+        block.stepLast = function(...)
+          local a = {...}
+          local o = OX
+          block.bricklet:io(1, "u1", o, false)
+        end
+
+        return block
+      ]==]
+    local iX, oX = {}, {}  -- Board view
+    for i = 1, 4 do
+      if self.parameter.mode[i] & 2 == 0 then
+        iX[#iX + 1] = 'i & ' .. (1 << (i - 1)) .. ' ~= 0'
+      else
+        oX[#oX + 1] = '(a[' .. (#oX + 1) .. '] and ' .. (1 << (i - 1)) .. ' or 0)'
+      end
+    end
+    local config = {
+      [['i', false]],
+      [['i', true]],
+      [['o', false]],
+      [['o', true]]
+    }
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['CONFIG1'] = config[self.parameter.mode[1] + 1],
+      ['CONFIG2'] = config[self.parameter.mode[2] + 1],
+      ['CONFIG3'] = config[self.parameter.mode[3] + 1],
+      ['CONFIG4'] = config[self.parameter.mode[4] + 1],
+      ['IX'] = table.concat(iX, ', '),
+      ['OX'] = (#oX > 0) and table.concat(oX, ' | ') or '0',
+    }
+    return string.gsub(source, '%a+%d*', replaces)
+  end,
+
+}
+
+
+
+

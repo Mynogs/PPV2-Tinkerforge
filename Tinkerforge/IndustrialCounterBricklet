@@ -1,0 +1,169 @@
+-- 23.09.2018 07:49:29 AR V1.0a
+
+block.setSize(151, 201)
+
+generic = {
+  name = 'Industrial Counter Bricklet',
+  parameter = {
+    uid = 'aaa',
+    statusLED = 3,
+  },
+
+  init = function(self)
+    if not self.parameter.channel then
+      self.parameter.channel = {}
+      for i = 1, 4 do
+        self.parameter.channel[i] = {
+          enabled = true,
+          countEdge = 0,
+          countDirection = 0,
+          dutyCyclePresaler = 0,
+          frequencyIntegrationTime = 3,
+          channelStatusLED = 1
+        }
+      end
+    end
+    block.setInputsPinCount(0)
+    block.setOutputsPinCount(16)
+    for i = 0, 3 do
+      block.setOutputPinName(i * 4 + 1, 'duty')
+      block.setOutputPinName(i * 4 + 2, 'period')
+      block.setOutputPinName(i * 4 + 3, 'freq')
+      block.setOutputPinName(i * 4 + 4, 'value')
+      block.setOutputPinTypeRestrains(i * 4 + 4, 'boolean')
+    end
+
+    block.modifyFlags('SupressStopFunctionCall', true)
+    block.modifyFlags('Realtime', true)
+  end,
+
+  open = function(self)
+    gui.add('Info', 'Info', 'Bricklet', self.name)
+    gui.add('Edit', 'EditUID', 'Bricklet UID')
+    gui.add('Button', 'ButtonUID', "Select UID")
+    gui.add('ComboBox', 'ComboBoxStatusLED', 'Status LED', 'Off\nOn\nShow Heardbeat\nShowStaus')
+    gui.set('EditUID', 'Text', self.parameter.uid)
+    gui.set('ComboBoxStatusLED', 'ItemIndex', self.parameter.statusLED)
+    local dutyCyclePresalerText = ''
+    for i = 0, 15 do
+      dutyCyclePresalerText = dutyCyclePresalerText .. (1 << i) .. '\n'
+    end
+    --dutyCyclePresalerText = dutyCyclePresalerText .. 'Auto'
+    local frequencyIntegrationTimeText = ''
+    for i = 0, 7 do
+      frequencyIntegrationTimeText = frequencyIntegrationTimeText .. (128 << i) .. 'ms\n'
+    end
+    --frequencyIntegrationTimeText = frequencyIntegrationTimeText .. 'Auto'
+
+    for i = 1, 4 do
+      gui.add('HTMLLabel', 'HTMLLabel' .. i, '<b>Channel ' .. i .. '</b>')
+      gui.add('CheckBox', 'CheckBoxEnabled' .. i, 'Enabled')
+      gui.add('ComboBox', 'ComboBoxCountEdge' .. i, 'Count Edge', 'Rising\nFalling\nBoth')
+      gui.add('ComboBox', 'ComboBoxCountDirection' .. i, 'Count Direction', 'Up\nDown')
+      gui.add('ComboBox', 'ComboBoxDutyCyclePresaler' .. i, 'Duty cycle presaler', dutyCyclePresalerText)
+      gui.add('ComboBox', 'ComboBoxFrequenceIntegrationTime' .. i, 'Freq. integration time', frequencyIntegrationTimeText)
+      gui.add('ComboBox', 'ColorBoxChannelStatusLED' .. i, 'Channel status LED', 'Off\nOn\nHardbeat\nChannel status')
+      gui.set('CheckBoxEnabled' .. i, 'Checked', self.parameter.channel[i].enabled)
+      gui.set('ComboBoxCountEdge' .. i, 'ItemIndex', self.parameter.channel[i].countEdge)
+      gui.set('ComboBoxCountDirection' .. i, 'ItemIndex', self.parameter.channel[i].countDirection)
+      gui.set('ComboBoxDutyCyclePresaler' .. i, 'ItemIndex', self.parameter.channel[i].dutyCyclePresaler)
+      gui.set('ComboBoxFrequenceIntegrationTime' .. i, 'ItemIndex', self.parameter.channel[i].frequencyIntegrationTime)
+      gui.set('ColorBoxChannelStatusLED' .. i, 'ItemIndex', self.parameter.channel[i].channelStatusLED)
+    end
+    gui.setEventHandler(
+      self,
+      'ButtonUID',
+      {
+        Click = function(self)
+          local uid = require('tinkerForge').selectDialog(self.name)
+          if uid then
+            gui.set('EditUID', 'Text', uid)
+            self.parameter.uid = uid
+          end
+        end,
+      }
+    )
+    gui.setSize()
+  end,
+
+  apply = function(self)
+    self.parameter.uid = gui.get('EditUID', 'Text')
+    self.parameter.statusLED = gui.get('ComboBoxStatusLED', 'ItemIndex')
+    for i = 1, 4 do
+      self.parameter.channel[i].enabled = gui.get('CheckBoxEnabled' .. i, 'Checked')
+      self.parameter.channel[i].countEdge = gui.get('ComboBoxCountEdge' .. i, 'ItemIndex')
+      self.parameter.channel[i].countDirection = gui.get('ComboBoxCountDirection' .. i, 'ItemIndex')
+      self.parameter.channel[i].dutyCyclePresaler = gui.get('ComboBoxDutyCyclePresaler' .. i, 'ItemIndex')
+      self.parameter.channel[i].frequencyIntegrationTime = gui.get('ComboBoxFrequenceIntegrationTime' .. i, 'ItemIndex')
+      self.parameter.channel[i].channelStatusLED = gui.get('ColorBoxChannelStatusLED' .. i, 'ItemIndex')
+    end
+  end,
+
+  close = function()
+  end,
+
+  avatar = function(self)
+    return block.getDefaultAvatar(
+      0x00,
+      "'" .. self.parameter.uid .. "'",
+      [[
+        draw.line(w - 50, 0, w - 50, h)
+        draw.line(w - 50, py(25), w, py(25))
+        draw.line(w - 50, py(50), w, py(50))
+        draw.line(w - 50, py(75), w, py(75))
+        draw.text(w - 70, 0, 20, py(25), '0', 5)
+        draw.text(w - 70, py(25), 20, py(25), '1', 5)
+        draw.text(w - 70, py(50), 20, py(25), '2', 5)
+        draw.text(w - 70, py(75), 20, py(25), '3', 5)
+      ]],
+      "0.0, 0.66, 0.91"
+    )
+
+
+--    return block.getDefaultAvatar(
+--      0x0,
+--      '',
+--      'draw.line(px(0), py(66), px(66), py(66), px(66), py(100))'
+--      )
+
+  end,
+
+  generate = function(self)
+    local source =
+      [==[
+        local block = {}
+
+        block.start = function()
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 0))
+          local c = require('messagePack').unpack(require('base64').decode('CHANNELS'))
+          block.bricklet:io(8, "b1b1b1b1", c[1].enabled, c[2].enabled, c[3].enabled, c[4].enabled, false)
+          for i = 1, 4 do
+            block.bricklet:io(11, "u1u1u1u1u1", i - 1, c[i].countEdge, c[i].countDirection, c[i].dutyCyclePresaler, c[i].frequencyIntegrationTime, false)
+            block.bricklet:io(17, "u1b1", i - 1, c[i].channelStatusLED, false)
+          end
+          block.bricklet:io(239, "u1", STATUSLED, false)
+        end
+
+        block.step = function()
+          local d1, d2, d3, d4, p1, p2, p3, p4, f1, f2, f3,f4, v1, v2, v3, v4 = block.bricklet:io(6, false, "u2u2u2u2u8u8u8u8u4u4u4u4b1b1b1b1")
+          return
+            d1 / 100.0, p1 / 1E9, f1 / 1E3, v1,
+            d2 / 100.0, p2 / 1E9, f2 / 1E3, v2,
+            d3 / 100.0, p3 / 1E9, f3 / 1E3, v3,
+            d4 / 100.0, p4 / 1E9, f4 / 1E3, v4
+        end
+
+        return block
+      ]==]
+
+    local replaces = {
+      ['NAME'] = self.name,
+      ['UID'] = self.parameter.uid,
+      ['CHANNELS'] = require('base64').encode(require('messagePack').pack(self.parameter.channel)),
+      ['STATUSLED'] = self.parameter.statusLED,
+    }
+    return string.gsub(source, '%a+', replaces)
+  end,
+
+}
+
