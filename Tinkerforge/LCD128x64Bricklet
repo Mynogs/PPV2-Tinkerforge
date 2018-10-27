@@ -1,11 +1,9 @@
--- 28.02.2017 11:13:40 AR V1.0a
--- 01.04.2017 16:59:53 AR V1.0b
--- 27.10.2018 08:46:22 AR V1.0b Wrong set of input pin on init
+-- 27.10.2018 10:44:19 AR V1.0a
 
 block.setSize(151, 51)
 
 generic = {
-  name = 'LCD 20x4 Bricklet',
+  name = 'LCD 128x64 Bricklet',
   parameter = {
     uid = 'aaa',
     inputs = 1,
@@ -69,7 +67,7 @@ generic = {
         local block = {}
 
         block.start = function()
-          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 6))
+          block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 0))
           block.bricklet:io(2, "", false)
           block.bricklet:io(3, "", false)
         end
@@ -82,10 +80,10 @@ generic = {
             if (c[i].format) then
               local s = string.format(c[i].format, a[j])
               --print(s)
-              block.bricklet:io(1, "u1u1s20", c[i].row - 1, c[i].col - 1, s, false)
+              block.bricklet:io(6, "u1u1s22", c[i].row - 1, c[i].col - 1, s, false)
               j = j + 1
             elseif (c[i].text) then
-              block.bricklet:io(1, "u1u1s20", c[i].row - 1, c[i].col - 1, c[i].text, false)
+              block.bricklet:io(6, "u1u1s22", c[i].row - 1, c[i].col - 1, c[i].text, false)
             end
           end
         end
