@@ -1,5 +1,6 @@
 -- 28.02.2017 11:13:40 AR V1.0a
 -- 01.04.2017 16:59:53 AR V1.0b
+-- 27.10.2018 08:46:22 AR V1.0b Wrong set of input pin on init
 
 block.setSize(151, 51)
 
@@ -15,7 +16,7 @@ generic = {
   },
 
   init = function(self)
-    block.setInputsPinCount(1)
+    block.setInputsPinCount(self.parameter.inputs)
     block.setOutputsPinCount(0)
     block.modifyFlags('CanStopSimulation', false)
     block.modifyFlags('SupressStopFunctionCall', true)
