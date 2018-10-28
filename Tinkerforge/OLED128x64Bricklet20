@@ -1,7 +1,4 @@
--- 28.02.2017 11:13:40 AR V1.0a
--- 01.04.2017 16:59:53 AR V1.0b
--- 29.04.2018 09:43:47 AR V1.0c Input count bug fixed
--- 28.10.2018 09:13:03 AR V1.0d Error in funktion 2
+-- 28.10.2018 09:04:11 AR V1.0a
 
 block.setSize(151, 51)
 
@@ -71,7 +68,7 @@ generic = {
 
         block.start = function()
           block.bricklet = assert(require('tinkerForge').new('NAME', 'UID', 2, 0, 6))
-          block.bricklet:io(2, "u1u1u1u1", 0, 127, 0, 7, false)
+          block.bricklet:io(4, "u1b1b1", 127, false, true, false)
           block.bricklet:io(3, "", false)
         end
 
@@ -83,10 +80,10 @@ generic = {
             if (c[i].format) then
               local s = string.format(c[i].format, a[j])
               --print(s)
-              block.bricklet:io(6, "u1u1s26", c[i].row - 1, c[i].col - 1, s, false)
+              block.bricklet:io(6, "u1u1s22", c[i].row - 1, c[i].col - 1, s, false)
               j = j + 1
             elseif (c[i].text) then
-              block.bricklet:io(6, "u1u1s26", c[i].row - 1, c[i].col - 1, c[i].text, false)
+              block.bricklet:io(6, "u1u1s22", c[i].row - 1, c[i].col - 1, c[i].text, false)
             end
           end
         end
