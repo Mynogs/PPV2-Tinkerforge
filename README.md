@@ -7,7 +7,3 @@ To install the block library please look here: [Install blocks](https://github.c
 
 Copy the `p+.key` licence file to P+ root directory (where the `p+.exe` is)
 
-# p+ Homepage
-
-You can also download a complete zip image supporting Tinkerforge from the p+ homepage: [p+ simulation](https://www.pplus-simulation.de/produkte)
-
